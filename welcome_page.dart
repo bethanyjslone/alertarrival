@@ -24,12 +24,14 @@ class WelcomePage extends StatelessWidget{
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => MyHomePage(title: 'Alert Arrival')),
+                MaterialPageRoute
+                (builder: (context) => MyHomePage(
+                  title: 'Alert Arrival')),
               );
             },
             style: ButtonStyle(

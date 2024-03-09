@@ -1,6 +1,10 @@
+import 'package:eyes/data_model.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'welcome_page.dart';
+import 'data_page.dart';
+
+List<ActivationEntry> activationEntries = [];
+int alerts = 0;
 
 void main() {
   runApp(const MyApp());
@@ -12,6 +16,7 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+
     return MaterialApp(
       title: 'Alert Arrival',
       theme: ThemeData(
@@ -19,6 +24,11 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: WelcomePage(),
+      routes: {
+        '/home':(context) => MyHomePage(title: 'Alert Arrival',
+        ),
+        '/data':(context) => DataPage(activationEntries: activationEntries),
+      },
     );
   }
 }
@@ -34,10 +44,49 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   bool isDrowsyModeActivated = false;
+  
 
   void _toggleDrowsyMode() {
     setState(() {
       isDrowsyModeActivated = !isDrowsyModeActivated;
+       
+      if(isDrowsyModeActivated)
+      {
+        late ActivationEntry newEntry;
+        newEntry = ActivationEntry(DateTime.now(), 0);
+
+        activationEntries.insert(0, newEntry);
+
+        if(activationEntries.length > 10)
+        {
+          activationEntries.removeLast();
+        }
+      }
+      else{
+
+        if(activationEntries.isNotEmpty)
+        {
+          activationEntries.first.alertNum = alerts;
+        }
+
+        //set back to 0
+        alerts = 0;
+      }
+    });
+  }
+
+  void _navigateToDataPage()
+  {
+    Navigator.pushNamed(context, '/data');
+  }
+
+  void _incrementAlerts()
+  {
+    setState(() {
+      if(isDrowsyModeActivated)
+      {
+        alerts++;
+      }
     });
   }
 
@@ -98,6 +147,16 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   ],
                 ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _navigateToDataPage,
+               child: Text('Go to Data Page'),
+               ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: _incrementAlerts,
+                child: Text('Add Alert'),
               ),
           ],
         ),

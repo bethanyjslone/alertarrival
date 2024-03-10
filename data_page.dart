@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:intl/intl.dart';
 import 'data_model.dart';
 
 class DataPage extends StatelessWidget {
@@ -21,7 +22,7 @@ class DataPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Recent Activations:',
+              'Ten Most Recent Activations:',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 10),
@@ -29,16 +30,19 @@ class DataPage extends StatelessWidget {
               Text('No activations yet.')
             else
               Expanded(
-                child: ListView.builder(
-                  itemCount: activationEntries.length,
-                  itemBuilder: (context, index) {
-                    final entry = activationEntries[index];
-                    return ListTile(
-                      title: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+                child: Center(
+                  child: ListView.builder(
+                    itemCount: activationEntries.length,
+                    itemBuilder: (context, index) {
+                      final entry = activationEntries[index];
+                    //format Date
+                      final formattedDate = DateFormat('MMMM d, y H:mm:ss').format(entry.timestamp);
+                      return ListTile(
+                        title: Column(
+                         crossAxisAlignment: CrossAxisAlignment.start,
+                         children: [
                           Text(
-                            'Activated on ${entry.timestamp} '
+                            'Activated on $formattedDate '
                                 'with ${entry.alertNum} alerts',
                             style: TextStyle(fontSize: 16),
                           ),
@@ -48,6 +52,7 @@ class DataPage extends StatelessWidget {
                     );
                   },
                 ),
+              ),
               ),
           ],
         ),

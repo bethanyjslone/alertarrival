@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:alert_arrival/data_model.dart';
 import 'package:flutter/material.dart';
 import 'package:alan_voice/alan_voice.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_core/firebase_core.dart';
+//import 'firebase_options.dart';
 
 import 'welcome_page.dart';
 import 'data_page.dart';
@@ -10,12 +15,16 @@ int alerts = 0;
 String deactivatedPath = 'assets/images/happy-face.png';
 String activatedPath = 'assets/images/sleepy-face.png';
 
-void main() {
-  runApp(const MyApp());
+FirebaseDatabase database = FirebaseDatabase.instance;
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp( MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({super.key});
 
   // This widget is the root of your application.
   @override
@@ -45,6 +54,41 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   bool isDrowsyActivated = false;
+  bool isDrowsy = false;
+
+  void writeToDatabase() {
+    DatabaseReference databaseReference = FirebaseDatabase.instance.ref().child(
+        'Test1');
+
+    databaseReference.set({
+      'alert': 'true',
+    });
+  }
+
+  Future<bool> didBlink() async {
+    Completer<bool> completer = Completer<bool>();
+
+    DatabaseReference databaseReference =
+    FirebaseDatabase.instance.ref().child('Test1').child('alert');
+    var subscription;
+    databaseReference.onValue.listen((DatabaseEvent event) {
+      dynamic value = event.snapshot.value;
+
+      if (value == 'true')
+      {
+        completer.complete(true);
+      }
+      else
+        {
+          completer.complete(false);
+        }
+      subscription.cancel();
+
+    });
+
+    return completer.future;
+  }
+
 
   Color getBackgroundColor()
   {
@@ -58,6 +102,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
       if(isDrowsyActivated)
         {
+          writeToDatabase();
           late ActivationEntry newEntry;
           newEntry = ActivationEntry(DateTime.now(), 0);
 
@@ -67,6 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
             {
               activationEntries.removeLast();
             }
+
 
           AlanVoice.playText("Activating Alert Arrival");
         }
@@ -95,11 +141,17 @@ class _MyHomePageState extends State<MyHomePage> {
     Navigator.pushNamed(context, '/data');
   }
 
-  void _incrementAlerts()
+  void _incrementAlerts() async
   {
-    setState(() {
+    setState(() async {
       if(isDrowsyActivated)
         {
+          bool isDrowsyResult = await didBlink();
+
+          if(isDrowsyResult)
+            {
+              _toggleDrowsyMode();
+            }
           //turn on here
           AlanVoice.activate();
 

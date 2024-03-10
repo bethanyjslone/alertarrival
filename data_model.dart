@@ -3,8 +3,7 @@
 class ActivationEntry
 {
   DateTime timestamp;
-  int alertNum;
 
-  ActivationEntry(this.timestamp, this.alertNum);
+  ActivationEntry(this.timestamp);
 }
 

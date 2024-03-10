@@ -11,7 +11,6 @@ import 'welcome_page.dart';
 import 'data_page.dart';
 
 List<ActivationEntry> activationEntries = [];
-int alerts = 0;
 String deactivatedPath = 'assets/images/happy-face.png';
 String activatedPath = 'assets/images/sleepy-face.png';
 bool isDrowsyResult = false;
@@ -31,6 +30,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Alert Arrival',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 253, 38, 23)),
@@ -39,6 +39,7 @@ class MyApp extends StatelessWidget {
       home: WelcomePage(),
       routes: {
         '/home':(context) => MyHomePage(title: 'Alert Arrival'),
+        '/welcome':(context) => WelcomePage(),
         '/data':(context) => DataPage(activationEntries: activationEntries),
       },
     );
@@ -121,10 +122,8 @@ class _MyHomePageState extends State<MyHomePage> {
               Future.delayed(const Duration(seconds: 1), () {
                 // Play additional phrases
                 AlanVoice.playText("Alert detected");
-                AlanVoice.playText("Hi! I'm Alan");
+                AlanVoice.playText("Hi! I'm Alert Arrival");
               });
-
-              alerts++;
             }
         }
     });
@@ -139,10 +138,9 @@ class _MyHomePageState extends State<MyHomePage> {
         {
           AlanVoice.activate();
           writeToDatabaseTrue();
-          alerts++;
 
           late ActivationEntry newEntry;
-          newEntry = ActivationEntry(DateTime.now(), 0);
+          newEntry = ActivationEntry(DateTime.now());
 
           activationEntries.insert(0, newEntry);
 
@@ -151,23 +149,20 @@ class _MyHomePageState extends State<MyHomePage> {
               activationEntries.removeLast();
             }
 
-          Future.delayed(const Duration(seconds: 1), () {
-            // Play additional phrases
-            AlanVoice.playText("Alert detected");
-            AlanVoice.playText("Hi! I'm Alan");
-          });
+          if(!isDrowsyResult)
+            {
+              Future.delayed(const Duration(seconds: 1), () {
+                // Play additional phrases
+                AlanVoice.playText("Alert detected");
+                AlanVoice.playText("Hi! I'm Alert Arrival");
+              });
+            }
+
         }
       //unactivated
       else
         {
           isDrowsyResult = false;
-
-          if(activationEntries.isNotEmpty)
-            {
-              activationEntries.first.alertNum = alerts;
-            }
-          //reset alerts
-          alerts = 0;
 
           AlanVoice.playText("Deactivating Alert Arrival");
 
@@ -185,9 +180,12 @@ class _MyHomePageState extends State<MyHomePage> {
   {
     super.initState();
 
-    Timer.periodic(Duration(seconds: 2), (timer) {
-      checkForDrowsiness();
-    });
+    if(!isDrowsyResult)
+      {
+        Timer.periodic(Duration(seconds: 2), (timer) {
+          checkForDrowsiness();
+        });
+      }
   }
 
 
@@ -196,10 +194,15 @@ class _MyHomePageState extends State<MyHomePage> {
     Navigator.pushNamed(context, '/data');
   }
 
+  void _navigateToWelcomePage()
+  {
+    Navigator.pushNamed(context, '/welcome');
+  }
+
   _MyHomePageState() {
 
     /// Init Alan Button with project key from Alan AI Studio
-    AlanVoice.addButton("a692a72b78371c661865f11c615a99332e956eca572e1d8b807a3e2338fdd0dc/stage",
+    AlanVoice.addButton("40d772159ae9c814f0f565cc300ba0102e956eca572e1d8b807a3e2338fdd0dc/stage",
     buttonAlign: AlanVoice.BUTTON_ALIGN_LEFT);
     /// Handle commands from Alan AI Studio
     AlanVoice.onCommand.add((command) {
@@ -221,11 +224,7 @@ class _MyHomePageState extends State<MyHomePage> {
             }
           if(isDrowsyActivated)
             {
-              if(event["text"] == 'turn off alert arrival')
-              {
-                _toggleDrowsyMode();
-              }
-              if(event["text"] == 'Alan turn off')
+              if(event["text"] == 'alert arrival turn off')
                 {
                   AlanVoice.deactivate();
                 }
@@ -318,6 +317,16 @@ class _MyHomePageState extends State<MyHomePage> {
 
               ),
                 child: const Text('Go to Data Page'),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _navigateToWelcomePage,
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all<Color>(Colors.white),
+                foregroundColor: MaterialStateProperty.all<Color>(Colors.blueGrey),
+
+              ),
+              child: const Text('Go to Welcome Page'),
             ),
           ],
         ),

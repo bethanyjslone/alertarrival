@@ -36,14 +36,13 @@ class DataPage extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final entry = activationEntries[index];
                     //format Date
-                      final formattedDate = DateFormat('MMMM d, y H:mm:ss').format(entry.timestamp);
+                      final formattedDate = DateFormat('MMMM d, y H:mm').format(entry.timestamp);
                       return ListTile(
                         title: Column(
                          crossAxisAlignment: CrossAxisAlignment.start,
                          children: [
                           Text(
-                            'Activated on $formattedDate '
-                                'with ${entry.alertNum} alerts',
+                            'Activated on $formattedDate',
                             style: TextStyle(fontSize: 16),
                           ),
                           //add more widgets if i need

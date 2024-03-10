@@ -38,9 +38,9 @@ class DataPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                              'Activated on ${entry.timestamp} ' 
-                              'with ${entry.alertNum} alerts',
-                              style: TextStyle(fontSize: 16),
+                            'Activated on ${entry.timestamp} '
+                                'with ${entry.alertNum} alerts',
+                            style: TextStyle(fontSize: 16),
                           ),
                           //add more widgets if i need
                         ],

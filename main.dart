@@ -1,5 +1,7 @@
-import 'package:eyes/data_model.dart';
+import 'package:alert_arrival/data_model.dart';
 import 'package:flutter/material.dart';
+import 'package:alan_voice/alan_voice.dart';
+
 import 'welcome_page.dart';
 import 'data_page.dart';
 
@@ -16,17 +18,15 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-
     return MaterialApp(
       title: 'Alert Arrival',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 253, 38, 23)),
+        colorScheme: ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 253, 38, 23)),
         useMaterial3: true,
       ),
       home: WelcomePage(),
       routes: {
-        '/home':(context) => MyHomePage(title: 'Alert Arrival',
-        ),
+        '/home':(context) => MyHomePage(title: 'Alert Arrival'),
         '/data':(context) => DataPage(activationEntries: activationEntries),
       },
     );
@@ -35,7 +35,6 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   MyHomePage({super.key, required this.title});
-
   final String title;
 
   @override
@@ -43,35 +42,38 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  bool isDrowsyModeActivated = false;
-  
+  bool isDrowsyActivated = false;
 
-  void _toggleDrowsyMode() {
+  void _toggleDrowsyMode(){
     setState(() {
-      isDrowsyModeActivated = !isDrowsyModeActivated;
-       
-      if(isDrowsyModeActivated)
-      {
-        late ActivationEntry newEntry;
-        newEntry = ActivationEntry(DateTime.now(), 0);
+      isDrowsyActivated = !isDrowsyActivated;
 
-        activationEntries.insert(0, newEntry);
-
-        if(activationEntries.length > 10)
+      if(isDrowsyActivated)
         {
-          activationEntries.removeLast();
-        }
-      }
-      else{
+          late ActivationEntry newEntry;
+          newEntry = ActivationEntry(DateTime.now(), 0);
 
-        if(activationEntries.isNotEmpty)
+          activationEntries.insert(0, newEntry);
+
+          if(activationEntries.length > 10)
+            {
+              activationEntries.removeLast();
+            }
+
+          AlanVoice.playText("Activating Alert Arrival");
+        }
+      //unactivated
+      else
         {
-          activationEntries.first.alertNum = alerts;
-        }
+          if(activationEntries.isNotEmpty)
+            {
+              activationEntries.first.alertNum = alerts;
+            }
+          //reset alerts
+          alerts = 0;
 
-        //set back to 0
-        alerts = 0;
-      }
+          AlanVoice.playText("Deactivating Alert Arrival");
+        }
     });
   }
 
@@ -83,84 +85,123 @@ class _MyHomePageState extends State<MyHomePage> {
   void _incrementAlerts()
   {
     setState(() {
-      if(isDrowsyModeActivated)
-      {
-        alerts++;
-      }
+      if(isDrowsyActivated)
+        {
+          AlanVoice.playText("Alert detected");
+          AlanVoice.playText("Hi! I'm Alan");
+          alerts++;
+        }
     });
+  }
+
+  _MyHomePageState() {
+
+    /// Init Alan Button with project key from Alan AI Studio
+    AlanVoice.addButton("a692a72b78371c661865f11c615a99332e956eca572e1d8b807a3e2338fdd0dc/stage",
+    buttonAlign: AlanVoice.BUTTON_ALIGN_LEFT);
+    /// Handle commands from Alan AI Studio
+    AlanVoice.onCommand.add((command) {
+      debugPrint("got new command ${command.toString()}");
+    });
+
+
+    /// Handling events
+    void _handleEvent(Map<String, dynamic> event) {
+      switch (event["name"]) {
+        case "recognized":
+          debugPrint("Interim results: ${event["text"]}");
+          break;
+        case "parsed":
+          debugPrint("Final result: ${event["text"]}");
+          if(event["text"] == 'turn on alert arrival')
+            {
+              _toggleDrowsyMode();
+            }
+          if(isDrowsyActivated)
+            {
+              if(event["text"] == 'turn off alert arrival')
+              {
+                _toggleDrowsyMode();
+              }
+            }
+          break;
+        case "text":
+          debugPrint("Alan AI's response: ${event["text"]}");
+          break;
+        default:
+          debugPrint("Unknown event");
+      }
+    }
+
+    /// Registering the event listener
+    AlanVoice.onEvent.add((event) => _handleEvent(event.data));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Text(
-              isDrowsyModeActivated ? 'Activated' : 'Not Activated',
+              isDrowsyActivated ? 'Activated' : 'Not Activated',
               style: TextStyle(
                 fontSize: 48,
-                color: isDrowsyModeActivated 
-                  ? Colors.green 
-                  : Colors.red,
+                color: isDrowsyActivated ? Colors.green : Colors.red,
               ),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: _toggleDrowsyMode,
-              style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all<Color>(
-                  isDrowsyModeActivated ? Colors.red : Colors.green,
-                  ), 
-              padding: MaterialStateProperty.all<EdgeInsetsGeometry>(
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                ),  
-                foregroundColor: MaterialStateProperty.all<Color>(
-                  Colors.white
+                onPressed: _toggleDrowsyMode,
+                style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.all<Color>(
+                    isDrowsyActivated ? Colors.red : Colors.green,
+                  ),
+                  padding: MaterialStateProperty.all<EdgeInsetsGeometry>(
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                  ),
+                  foregroundColor: MaterialStateProperty.all<Color>(
+                    Colors.white
+                  ),
+                  elevation: MaterialStateProperty.all<double>(
+                    4.0
+                  ),
                 ),
-                elevation: MaterialStateProperty.all<double>(
-                  4.0
-                ),
-              ), 
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    isDrowsyModeActivated
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isDrowsyActivated
                       ? Icons.power_settings_new
-                      : Icons.power_settings_new_outlined,
-                    size: 24,
+                          : Icons.power_settings_new_outlined,
+                      size: 24,
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      isDrowsyModeActivated
-                      ? 'Deactivate Drowsy Mode'
-                      : 'Activate Drowsy Mode',
+                      isDrowsyActivated
+                      ? 'Deactivated Drowsy Mode'
+                          : 'Activate Drowsy Mode',
                       style: const TextStyle(
                         fontSize: 18
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
                 onPressed: _navigateToDataPage,
-               child: Text('Go to Data Page'),
-               ),
-              const SizedBox(height: 10),
-              ElevatedButton(
+                child: Text('Go to Data Page'),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
                 onPressed: _incrementAlerts,
                 child: Text('Add Alert'),
-              ),
+            ),
           ],
         ),
-      ),
+      ),// This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }

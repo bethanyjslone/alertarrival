@@ -1,9 +1,10 @@
 //data_model.dart
 
-class ActivationEntry 
+class ActivationEntry
 {
   DateTime timestamp;
   int alertNum;
 
   ActivationEntry(this.timestamp, this.alertNum);
 }
+

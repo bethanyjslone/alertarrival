@@ -14,6 +14,7 @@ List<ActivationEntry> activationEntries = [];
 int alerts = 0;
 String deactivatedPath = 'assets/images/happy-face.png';
 String activatedPath = 'assets/images/sleepy-face.png';
+bool isDrowsyResult = false;
 
 FirebaseDatabase database = FirebaseDatabase.instance;
 
@@ -56,10 +57,17 @@ class _MyHomePageState extends State<MyHomePage> {
   bool isDrowsyActivated = false;
   bool isDrowsy = false;
 
-  void writeToDatabase() {
+  void writeToDatabaseFalse() {
     DatabaseReference databaseReference = FirebaseDatabase.instance.ref().child(
         'Test1');
+    databaseReference.set({
+      'alert': 'false',
+    });
+  }
 
+  void writeToDatabaseTrue() {
+    DatabaseReference databaseReference = FirebaseDatabase.instance.ref().child(
+        'Test1');
     databaseReference.set({
       'alert': 'true',
     });
@@ -95,6 +103,33 @@ class _MyHomePageState extends State<MyHomePage> {
     return isDrowsyActivated ? Colors.green : Colors.blueAccent;
   }
 
+  void checkForDrowsiness() async
+  {
+    setState(() async {
+      if(!isDrowsyActivated)
+        {
+          //checks for true value
+          isDrowsyResult = await didBlink();
+
+          if(isDrowsyResult)
+            {
+              _toggleDrowsyMode();
+
+              //turn on here
+              AlanVoice.activate();
+
+              Future.delayed(const Duration(seconds: 1), () {
+                // Play additional phrases
+                AlanVoice.playText("Alert detected");
+                AlanVoice.playText("Hi! I'm Alan");
+              });
+
+              alerts++;
+            }
+        }
+    });
+  }
+
 
   void _toggleDrowsyMode(){
     setState(() {
@@ -102,7 +137,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
       if(isDrowsyActivated)
         {
-          writeToDatabase();
+          AlanVoice.activate();
+          writeToDatabaseTrue();
+          alerts++;
+
           late ActivationEntry newEntry;
           newEntry = ActivationEntry(DateTime.now(), 0);
 
@@ -113,12 +151,17 @@ class _MyHomePageState extends State<MyHomePage> {
               activationEntries.removeLast();
             }
 
-
-          AlanVoice.playText("Activating Alert Arrival");
+          Future.delayed(const Duration(seconds: 1), () {
+            // Play additional phrases
+            AlanVoice.playText("Alert detected");
+            AlanVoice.playText("Hi! I'm Alan");
+          });
         }
       //unactivated
       else
         {
+          isDrowsyResult = false;
+
           if(activationEntries.isNotEmpty)
             {
               activationEntries.first.alertNum = alerts;
@@ -128,6 +171,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
           AlanVoice.playText("Deactivating Alert Arrival");
 
+          writeToDatabaseFalse();
+
           Future.delayed(const Duration(seconds: 2), () {
             //so it says phrase above
             AlanVoice.deactivate();
@@ -136,34 +181,19 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  void initState()
+  {
+    super.initState();
+
+    Timer.periodic(Duration(seconds: 2), (timer) {
+      checkForDrowsiness();
+    });
+  }
+
+
   void _navigateToDataPage()
   {
     Navigator.pushNamed(context, '/data');
-  }
-
-  void _incrementAlerts() async
-  {
-    setState(() async {
-      if(isDrowsyActivated)
-        {
-          bool isDrowsyResult = await didBlink();
-
-          if(isDrowsyResult)
-            {
-              _toggleDrowsyMode();
-            }
-          //turn on here
-          AlanVoice.activate();
-
-          Future.delayed(const Duration(seconds: 1), () {
-            // Play additional phrases
-            AlanVoice.playText("Alert detected");
-            AlanVoice.playText("Hi! I'm Alan");
-          });
-
-          alerts++;
-        }
-    });
   }
 
   _MyHomePageState() {
@@ -278,15 +308,6 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   ],
                 ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-                onPressed: _incrementAlerts,
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all<Color>(Colors.white),
-                  foregroundColor: MaterialStateProperty.all<Color>(Colors.blueGrey),
-                ),
-                child: const Text('Add Alert'),
             ),
             const SizedBox(height: 10),
             ElevatedButton(

@@ -4,6 +4,20 @@ from scipy.spatial import distance
 import numpy as np
 import time
 
+import firebase_admin 
+from firebase_admin import credentials
+
+# Replace 'path/to/your/serviceAccountKey.json' with the actual path to your downloaded JSON file
+cred = credentials.Certificate(r'C:\Users\betha\Downloads\alertarival2-firebase-adminsdk-ns8qt-07e362da7b.json')
+firebase_admin.initialize_app(cred,{
+    'databaseURL' : 'https://alertarival2-default-rtdb.firebaseio.com'
+})
+
+from firebase_admin import db
+ref = db.reference ("/Test1")
+
+data = ref.get()
+
 # Function to calculate the eye aspect ratio (EAR)
 def eye_aspect_ratio(eye):
     A = distance.euclidean(eye[1], eye[5])
@@ -75,9 +89,13 @@ while True:
 
         # Check for drowsiness
         if duration_closed_counter >= duration_closed_threshold:
-            cv2.putText(frame, "Drowsiness detected - Eyes closed for too long", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+            # Update Firebase only when drowsiness is detected
+            ref.set({
+                'alert': 'true',
+            })
+            cv2.putText(frame, "Drowsiness detected - Eyes closed for too long", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7,
+                        (0, 0, 255), 2)
 
-    # Display the frame
     cv2.imshow("Eye Tracker", frame)
 
     # Break the loop if 'q' key is pressed

@@ -7,6 +7,8 @@ import 'data_page.dart';
 
 List<ActivationEntry> activationEntries = [];
 int alerts = 0;
+String deactivatedPath = 'assets/images/happy-face.png';
+String activatedPath = 'assets/images/sleepy-face.png';
 
 void main() {
   runApp(const MyApp());
@@ -44,6 +46,12 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   bool isDrowsyActivated = false;
 
+  Color getBackgroundColor()
+  {
+    return isDrowsyActivated ? Colors.green : Colors.blueAccent;
+  }
+
+
   void _toggleDrowsyMode(){
     setState(() {
       isDrowsyActivated = !isDrowsyActivated;
@@ -73,6 +81,11 @@ class _MyHomePageState extends State<MyHomePage> {
           alerts = 0;
 
           AlanVoice.playText("Deactivating Alert Arrival");
+
+          Future.delayed(const Duration(seconds: 2), () {
+            //so it says phrase above
+            AlanVoice.deactivate();
+          });
         }
     });
   }
@@ -87,8 +100,15 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       if(isDrowsyActivated)
         {
-          AlanVoice.playText("Alert detected");
-          AlanVoice.playText("Hi! I'm Alan");
+          //turn on here
+          AlanVoice.activate();
+
+          Future.delayed(const Duration(seconds: 1), () {
+            // Play additional phrases
+            AlanVoice.playText("Alert detected");
+            AlanVoice.playText("Hi! I'm Alan");
+          });
+
           alerts++;
         }
     });
@@ -123,6 +143,10 @@ class _MyHomePageState extends State<MyHomePage> {
               {
                 _toggleDrowsyMode();
               }
+              if(event["text"] == 'Alan turn off')
+                {
+                  AlanVoice.deactivate();
+                }
             }
           break;
         case "text":
@@ -140,16 +164,30 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: getBackgroundColor(),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
-            Text(
-              isDrowsyActivated ? 'Activated' : 'Not Activated',
-              style: TextStyle(
-                fontSize: 48,
-                color: isDrowsyActivated ? Colors.green : Colors.red,
+            Container(
+              height: 150,
+              alignment: Alignment.topCenter,
+              child: Image.asset(
+                isDrowsyActivated ? activatedPath : deactivatedPath,
+                color: Colors.white,
               ),
+            ),
+            Container(
+              alignment: Alignment.center,
+            child: Text(
+              isDrowsyActivated ? 'Activated' : 'Not Activated',
+              style: const TextStyle(
+                fontSize: 50,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
@@ -191,13 +229,22 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-                onPressed: _navigateToDataPage,
-                child: Text('Go to Data Page'),
+                onPressed: _incrementAlerts,
+                style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.all<Color>(Colors.white),
+                  foregroundColor: MaterialStateProperty.all<Color>(Colors.blueGrey),
+                ),
+                child: const Text('Add Alert'),
             ),
             const SizedBox(height: 10),
             ElevatedButton(
-                onPressed: _incrementAlerts,
-                child: Text('Add Alert'),
+                onPressed: _navigateToDataPage,
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all<Color>(Colors.white),
+                foregroundColor: MaterialStateProperty.all<Color>(Colors.blueGrey),
+
+              ),
+                child: const Text('Go to Data Page'),
             ),
           ],
         ),

@@ -2,17 +2,13 @@ import cv2
 import dlib
 from scipy.spatial import distance
 import numpy as np
+import time
 
 # Function to calculate the eye aspect ratio (EAR)
 def eye_aspect_ratio(eye):
-    # Calculate the Euclidean distances between the two sets of vertical eye landmarks
     A = distance.euclidean(eye[1], eye[5])
     B = distance.euclidean(eye[2], eye[4])
-
-    # Calculate the Euclidean distance between the horizontal eye landmarks
     C = distance.euclidean(eye[0], eye[3])
-
-    # Compute the eye aspect ratio
     ear = (A + B) / (2.0 * C)
     return ear
 
@@ -22,6 +18,13 @@ predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
 
 # Open the front camera (use index 1)
 cap = cv2.VideoCapture(1)
+
+# Duration closed detection parameters
+duration_closed_threshold = 2  # Adjust the duration closed threshold (in seconds) as needed
+
+duration_closed_counter = 0
+start_time = time.time()
+eyes_closed = False
 
 while True:
     # Read a frame from the camera
@@ -61,7 +64,18 @@ while True:
 
         # Check if the eyes are closed (EAR below a certain threshold)
         if avg_ear < 0.25:
-            cv2.putText(frame, "Eyes Closed", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+            duration_closed_counter += time.time() - start_time
+            if not eyes_closed:
+                cv2.putText(frame, "Eyes Closed", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                eyes_closed = True
+        else:
+            eyes_closed = False
+            duration_closed_counter = 0
+            start_time = time.time()
+
+        # Check for drowsiness
+        if duration_closed_counter >= duration_closed_threshold:
+            cv2.putText(frame, "Drowsiness detected - Eyes closed for too long", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
     # Display the frame
     cv2.imshow("Eye Tracker", frame)
